@@ -35,6 +35,8 @@ namespace Envoy {
 namespace Tcp {
 namespace Compression {
 
+  static const std::string COMPRESSION_PREFIX = "COMPRESS!";
+
   void print_bytes(const Buffer::Instance& data) {
     std::string bytes(data.length() + 1, '\0');
     data.copyOut(0, data.length(), bytes.data());
@@ -77,8 +79,11 @@ TcpCompressionFilter::TcpCompressionFilter(TcpCompressionConfigSharedPtr config,
 }
 
 Network::FilterStatus TcpCompressionFilter::onData(Buffer::Instance& data, bool end_stream) {
-  UNUSED(data);
-  UNUSED(end_stream);
+  if (config_->direction == FilterDirection::OUTGOING) {
+    doDecompress(data);
+  } else {
+    doCompress(data, end_stream);
+  }
   return Network::FilterStatus::Continue;
 }
 
@@ -87,9 +92,46 @@ Network::FilterStatus TcpCompressionFilter::onNewConnection() {
 }
 
 Network::FilterStatus TcpCompressionFilter::onWrite(Buffer::Instance& data, bool end_stream) {
-  UNUSED(data);
-  UNUSED(end_stream);
+  if (config_->direction == FilterDirection::OUTGOING) {
+    doCompress(data, end_stream);
+  } else {
+    doDecompress(data);
+  }
   return Network::FilterStatus::Continue;
+}
+
+void TcpCompressionFilter::doCompress(Buffer::Instance& data, bool end_stream) {
+  bool sentCompressHeader = compressionState != CompressionState::WAITING_FOR_HEADER;
+  if (compressionState == CompressionState::WAITING_FOR_HEADER) {
+    if (data.startsWith(COMPRESSION_PREFIX)) {
+      compressionState = CompressionState::INPUT_COMPRESSED;
+    } else {
+      compressionState = CompressionState::INPUT_NOT_COMPRESSED;
+    }
+  }
+  if (compressionState == CompressionState::INPUT_NOT_COMPRESSED) {
+    compressor->compress(data, end_stream ? Envoy::Compression::Compressor::State::Finish : Envoy::Compression::Compressor::State::Flush);
+    if (!sentCompressHeader) {
+      data.prepend(COMPRESSION_PREFIX);
+    }
+  }
+}
+void TcpCompressionFilter::doDecompress(Buffer::Instance& data) {
+  if (decompressionState == CompressionState::WAITING_FOR_HEADER) {
+    if (data.startsWith(COMPRESSION_PREFIX)) {
+      decompressionState = CompressionState::INPUT_COMPRESSED;
+      data.drain(COMPRESSION_PREFIX.length());
+    } else {
+      decompressionState = CompressionState::INPUT_NOT_COMPRESSED;
+    }
+  }
+  
+  if (decompressionState == CompressionState::INPUT_COMPRESSED) {
+    Buffer::OwnedImpl out_buf;
+    decompressor->decompress(data, out_buf);
+    data.drain(data.length());
+    data.add(out_buf);
+  }
 }
 
 } // namespace Compression

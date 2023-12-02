@@ -54,6 +54,22 @@ Network::FilterFactoryCb TcpCompressionConfigFactory::createFilterFactory(
   return createFilterFactoryHelper(proto_config, context.getServerFactoryContext());
 }
 
+Network::FilterFactoryCb TcpCompressionUpstreamConfigFactory::createFilterFactoryFromProto(
+    const Protobuf::Message& config, Server::Configuration::UpstreamFactoryContext& context) {
+  return createFilterFactory(
+      dynamic_cast<const envoy::tcp::compression::config::TcpCompression&>(config), context);
+}
+
+ProtobufTypes::MessagePtr TcpCompressionUpstreamConfigFactory::createEmptyConfigProto() {
+  return std::make_unique<envoy::tcp::compression::config::TcpCompression>();
+}
+
+Network::FilterFactoryCb TcpCompressionUpstreamConfigFactory::createFilterFactory(
+    const envoy::tcp::compression::config::TcpCompression& proto_config,
+    Server::Configuration::UpstreamFactoryContext& context) {
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext());
+}
+
 /**
  * Static registration for the TcpCompression filter. @see
  * RegisterFactory.
@@ -61,6 +77,14 @@ Network::FilterFactoryCb TcpCompressionConfigFactory::createFilterFactory(
 static Registry::RegisterFactory<TcpCompressionConfigFactory,
                                  Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
+  
+/**
+ * Static registration for the TcpCompression Upstream filter. @see
+ * RegisterFactory.
+ */
+static Registry::RegisterFactory<TcpCompressionUpstreamConfigFactory,
+                                 Server::Configuration::NamedUpstreamNetworkFilterConfigFactory>
+    registered_upstream_;
 
 } // namespace Compression
 } // namespace Tcp

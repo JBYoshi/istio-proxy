@@ -47,6 +47,10 @@ enum class FilterDirection {
   OUTGOING, INCOMING
 };
 
+enum class CompressionState {
+  WAITING_FOR_HEADER, INPUT_NOT_COMPRESSED, INPUT_COMPRESSED
+};
+
 /**
  * Configuration for the TcpCompression filter.
  */
@@ -97,6 +101,12 @@ private:
 
   ::Envoy::Compression::Compressor::CompressorPtr compressor;
   ::Envoy::Compression::Decompressor::DecompressorPtr decompressor;
+
+  void doCompress(Buffer::Instance& data, bool end_stream);
+  void doDecompress(Buffer::Instance& data);
+
+  CompressionState compressionState = CompressionState::WAITING_FOR_HEADER;
+  CompressionState decompressionState = CompressionState::WAITING_FOR_HEADER;
 
   // Type url of google::protobuf::struct.
   const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";

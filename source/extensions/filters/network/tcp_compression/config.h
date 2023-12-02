@@ -43,6 +43,29 @@ private:
                       Server::Configuration::FactoryContext& context);
 };
 
+/**
+ * Config registration for the JBTest Upstream filter. @see
+ *  NamedUpstreamNetworkFilterConfigFactory.
+ */
+ // TODO: This class *should* be removable, but whenever I've tried, it seems to break the
+ // downstream handler registration.
+class TcpCompressionUpstreamConfigFactory
+    : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
+public:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::UpstreamFactoryContext&) override;
+
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override;
+
+  std::string name() const override { return "envoy.filters.network.upstream.tcp_compression"; }
+
+private:
+  Network::FilterFactoryCb
+  createFilterFactory(const envoy::tcp::compression::config::TcpCompression& proto_config,
+                      Server::Configuration::UpstreamFactoryContext& context);
+};
+
 } // namespace Compression
 } // namespace Tcp
 } // namespace Envoy
