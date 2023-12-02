@@ -1,4 +1,4 @@
-# Apply this with kubectl apply -f jbtestfilter.yaml
+# Apply this with "kubectl apply -f jbtestfilter.yaml" and "kubectl apply -f jbtestfilter.yaml -n istio-system"
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -21,7 +21,6 @@ spec:
           type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
           value:
             # Config values will go in here
-            direction: "incoming"
   - applyTo: NETWORK_FILTER
     match:
       context: SIDECAR_INBOUND
@@ -87,7 +86,6 @@ spec:
               type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
               value:
                 # Config values will go in here
-                direction: "outgoing"
           - name: "envoy.filters.network.jb_test"
             typed_config:
               "@type": type.googleapis.com/xds.type.v3.TypedStruct
@@ -126,7 +124,6 @@ spec:
               type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
               value:
                 # Config values will go in here
-                direction: "outgoing"
           - name: "envoy.filters.network.jb_test"
             typed_config:
               "@type": type.googleapis.com/xds.type.v3.TypedStruct

@@ -25,10 +25,4 @@ option go_package = "TcpCompression";
 // [#protodoc-title: MetadataExchange protocol match and data transfer]
 // TcpCompression protocol match and data transfer
 message TcpCompression {
-    CompressionDirection direction = 1;
-}
-
-enum CompressionDirection {
-    OUTGOING = 0;
-    INCOMING = 1;
 }

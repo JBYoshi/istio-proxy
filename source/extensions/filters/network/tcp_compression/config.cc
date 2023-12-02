@@ -28,9 +28,7 @@ Network::FilterFactoryCb createFilterFactoryHelper(
     const envoy::tcp::compression::config::TcpCompression& proto_config,
     Server::Configuration::ServerFactoryContext& context) {
   UNUSED(proto_config);
-  TcpCompressionConfigSharedPtr filter_config(std::make_shared<TcpCompressionConfig>(context.scope(),
-  proto_config.direction() == envoy::tcp::compression::config::CompressionDirection::OUTGOING
-    ? FilterDirection::OUTGOING : FilterDirection::INCOMING));
+  TcpCompressionConfigSharedPtr filter_config(std::make_shared<TcpCompressionConfig>(context.scope()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
         std::make_shared<TcpCompressionFilter>(filter_config, context.localInfo()));

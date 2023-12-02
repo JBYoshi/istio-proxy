@@ -26,8 +26,7 @@ namespace {
 
 Network::FilterFactoryCb createFilterFactoryHelper(
     const envoy::tcp::jb_test::config::JBTest& proto_config,
-    Server::Configuration::ServerFactoryContext& context, FilterDirection filter_direction) {
-  UNUSED(filter_direction);
+    Server::Configuration::ServerFactoryContext& context) {
   JBTestConfigSharedPtr filter_config(std::make_shared<JBTestConfig>(proto_config.prefix()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
@@ -49,8 +48,7 @@ ProtobufTypes::MessagePtr JBTestConfigFactory::createEmptyConfigProto() {
 Network::FilterFactoryCb JBTestConfigFactory::createFilterFactory(
     const envoy::tcp::jb_test::config::JBTest& proto_config,
     Server::Configuration::FactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
-                                   FilterDirection::Downstream);
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext());
 }
 
 Network::FilterFactoryCb JBTestUpstreamConfigFactory::createFilterFactoryFromProto(
@@ -66,8 +64,7 @@ ProtobufTypes::MessagePtr JBTestUpstreamConfigFactory::createEmptyConfigProto() 
 Network::FilterFactoryCb JBTestUpstreamConfigFactory::createFilterFactory(
     const envoy::tcp::jb_test::config::JBTest& proto_config,
     Server::Configuration::UpstreamFactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
-                                   FilterDirection::Upstream);
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext());
 }
 
 /**

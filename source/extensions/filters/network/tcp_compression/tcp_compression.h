@@ -43,10 +43,6 @@ using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
 // http://stackoverflow.com/questions/3599160#3599170
 #define UNUSED(x) (void)(x)
 
-enum class FilterDirection {
-  OUTGOING, INCOMING
-};
-
 enum class CompressionState {
   WAITING_FOR_HEADER, INPUT_NOT_COMPRESSED, INPUT_COMPRESSED
 };
@@ -56,10 +52,9 @@ enum class CompressionState {
  */
 class TcpCompressionConfig {
 public:
-  TcpCompressionConfig(Stats::Scope& scope, FilterDirection direction): scope(scope), direction(direction) {}
+  TcpCompressionConfig(Stats::Scope& scope): scope(scope) {}
 
   Stats::Scope& scope;
-  FilterDirection direction;
 
   static const CelStatePrototype& nodeInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
@@ -102,14 +97,8 @@ private:
   ::Envoy::Compression::Compressor::CompressorPtr compressor;
   ::Envoy::Compression::Decompressor::DecompressorPtr decompressor;
 
-  void doCompress(Buffer::Instance& data, bool end_stream);
-  void doDecompress(Buffer::Instance& data);
-
   CompressionState compressionState = CompressionState::WAITING_FOR_HEADER;
   CompressionState decompressionState = CompressionState::WAITING_FOR_HEADER;
-
-  // Type url of google::protobuf::struct.
-  const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";
 };
 
 } // namespace Compression
