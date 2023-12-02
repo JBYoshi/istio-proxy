@@ -105,8 +105,8 @@ private:
   void doCompress(Buffer::Instance& data, bool end_stream);
   void doDecompress(Buffer::Instance& data);
 
-  //CompressionState compressionState = CompressionState::WAITING_FOR_HEADER;
-  //CompressionState decompressionState = CompressionState::WAITING_FOR_HEADER;
+  CompressionState compressionState = CompressionState::WAITING_FOR_HEADER;
+  CompressionState decompressionState = CompressionState::WAITING_FOR_HEADER;
 
   // Type url of google::protobuf::struct.
   const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";
