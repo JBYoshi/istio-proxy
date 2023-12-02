@@ -53,37 +53,39 @@ TcpCompressionFilter::TcpCompressionFilter(TcpCompressionConfigSharedPtr config,
   UNUSED(config);
   UNUSED(local_info);
 
-  uint64_t chunk_size = 512; // TODO tune
-  uint64_t max_inflate_ratio = 5000;
-  uint64_t window_bits = 2048; // TODO tune
-  uint64_t memory_level = 5; // TODO tune
+  // uint64_t chunk_size = 512; // TODO tune
+  // uint64_t max_inflate_ratio = 5000;
+  // uint64_t window_bits = 2048; // TODO tune
+  // uint64_t memory_level = 5; // TODO tune
 
-  std::unique_ptr<Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl> compressor_impl = 
-    std::make_unique<Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl>(
-      chunk_size
-    );
-  std::unique_ptr<Envoy::Extensions::Compression::Gzip::Decompressor::ZlibDecompressorImpl> decompressor_impl =
-    std::make_unique<Envoy::Extensions::Compression::Gzip::Decompressor::ZlibDecompressorImpl>(
-      config->scope, "decompressor_stats.", chunk_size, max_inflate_ratio
-    );
-  compressor_impl->init(
-    Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl::CompressionLevel::Standard,
-    Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl::CompressionStrategy::Standard,
-    window_bits,
-    memory_level
-  );
-  decompressor_impl->init(window_bits);
+  // std::unique_ptr<Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl> compressor_impl = 
+  //   std::make_unique<Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl>(
+  //     chunk_size
+  //   );
+  // std::unique_ptr<Envoy::Extensions::Compression::Gzip::Decompressor::ZlibDecompressorImpl> decompressor_impl =
+  //   std::make_unique<Envoy::Extensions::Compression::Gzip::Decompressor::ZlibDecompressorImpl>(
+  //     config->scope, "decompressor_stats.", chunk_size, max_inflate_ratio
+  //   );
+  // compressor_impl->init(
+  //   Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl::CompressionLevel::Standard,
+  //   Envoy::Extensions::Compression::Gzip::Compressor::ZlibCompressorImpl::CompressionStrategy::Standard,
+  //   window_bits,
+  //   memory_level
+  // );
+  // decompressor_impl->init(window_bits);
 
-  compressor = Envoy::Compression::Compressor::CompressorPtr(std::move(compressor_impl));
-  decompressor = Envoy::Compression::Decompressor::DecompressorPtr(std::move(decompressor_impl));
+  // compressor = Envoy::Compression::Compressor::CompressorPtr(std::move(compressor_impl));
+  // decompressor = Envoy::Compression::Decompressor::DecompressorPtr(std::move(decompressor_impl));
 }
 
 Network::FilterStatus TcpCompressionFilter::onData(Buffer::Instance& data, bool end_stream) {
-  if (config_->direction == FilterDirection::OUTGOING) {
-    doDecompress(data);
-  } else {
-    doCompress(data, end_stream);
-  }
+  UNUSED(data);
+  UNUSED(end_stream);
+  // if (config_->direction == FilterDirection::OUTGOING) {
+  //   doDecompress(data);
+  // } else {
+  //   doCompress(data, end_stream);
+  // }
   return Network::FilterStatus::Continue;
 }
 
@@ -92,46 +94,61 @@ Network::FilterStatus TcpCompressionFilter::onNewConnection() {
 }
 
 Network::FilterStatus TcpCompressionFilter::onWrite(Buffer::Instance& data, bool end_stream) {
-  if (config_->direction == FilterDirection::OUTGOING) {
-    doCompress(data, end_stream);
-  } else {
-    doDecompress(data);
-  }
+  UNUSED(data);
+  UNUSED(end_stream);
+  // if (config_->direction == FilterDirection::OUTGOING) {
+  //   doCompress(data, end_stream);
+  // } else {
+  //   doDecompress(data);
+  // }
   return Network::FilterStatus::Continue;
 }
 
 void TcpCompressionFilter::doCompress(Buffer::Instance& data, bool end_stream) {
-  bool sentCompressHeader = compressionState != CompressionState::WAITING_FOR_HEADER;
-  if (compressionState == CompressionState::WAITING_FOR_HEADER) {
-    if (data.startsWith(COMPRESSION_PREFIX)) {
-      compressionState = CompressionState::INPUT_COMPRESSED;
-    } else {
-      compressionState = CompressionState::INPUT_NOT_COMPRESSED;
-    }
-  }
-  if (compressionState == CompressionState::INPUT_NOT_COMPRESSED) {
-    compressor->compress(data, end_stream ? Envoy::Compression::Compressor::State::Finish : Envoy::Compression::Compressor::State::Flush);
-    if (!sentCompressHeader) {
-      data.prepend(COMPRESSION_PREFIX);
-    }
-  }
+  UNUSED(end_stream);
+  printf("doCompress: input is %lu bytes\n", data.length());
+  fflush(stdout);
+  // bool sentCompressHeader = compressionState != CompressionState::WAITING_FOR_HEADER;
+  // if (compressionState == CompressionState::WAITING_FOR_HEADER) {
+  //   if (data.startsWith(COMPRESSION_PREFIX)) {
+  //     compressionState = CompressionState::INPUT_COMPRESSED;
+  //   } else {
+  //     compressionState = CompressionState::INPUT_NOT_COMPRESSED;
+  //   }
+  // }
+  // if (compressionState == CompressionState::INPUT_NOT_COMPRESSED) {
+  //   //compressor->compress(data, end_stream ? Envoy::Compression::Compressor::State::Finish : Envoy::Compression::Compressor::State::Flush);
+  //   printf("doCompress: did compress, output is %lu bytes\n", data.length());
+  //   fflush(stdout);
+  //   if (!sentCompressHeader) {
+  //     //data.prepend(COMPRESSION_PREFIX);
+  //     printf("\tbefore prepending prefix\n");
+  //     fflush(stdout);
+  //   }
+  // }
 }
 void TcpCompressionFilter::doDecompress(Buffer::Instance& data) {
-  if (decompressionState == CompressionState::WAITING_FOR_HEADER) {
-    if (data.startsWith(COMPRESSION_PREFIX)) {
-      decompressionState = CompressionState::INPUT_COMPRESSED;
-      data.drain(COMPRESSION_PREFIX.length());
-    } else {
-      decompressionState = CompressionState::INPUT_NOT_COMPRESSED;
-    }
-  }
+  printf("doDecompress: input is %lu bytes\n", data.length());
+  fflush(stdout);
+  // if (decompressionState == CompressionState::WAITING_FOR_HEADER) {
+  //   if (data.startsWith(COMPRESSION_PREFIX)) {
+  //     printf("\tbefore dropping prefix\n");
+  //     decompressionState = CompressionState::INPUT_COMPRESSED;
+  //     //data.drain(COMPRESSION_PREFIX.length());
+  //     fflush(stdout);
+  //   } else {
+  //     decompressionState = CompressionState::INPUT_NOT_COMPRESSED;
+  //   }
+  // }
   
-  if (decompressionState == CompressionState::INPUT_COMPRESSED) {
-    Buffer::OwnedImpl out_buf;
-    decompressor->decompress(data, out_buf);
-    data.drain(data.length());
-    data.add(out_buf);
-  }
+  // if (decompressionState == CompressionState::INPUT_COMPRESSED) {
+  //   Buffer::OwnedImpl out_buf;
+  //   //decompressor->decompress(data, out_buf);
+  //   //data.drain(data.length());
+  //   //data.add(out_buf);
+  //   printf("doDecompress: output is %lu bytes\n", data.length());
+  //   fflush(stdout);
+  // }
 }
 
 } // namespace Compression
