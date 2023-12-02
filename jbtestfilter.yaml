@@ -15,13 +15,47 @@ spec:
     patch:
       operation: INSERT_BEFORE
       value:
-        name: "envoy.filters.network.jb_test"  # Upstream might be a bit of a misnomer but this just affects logs.
+        name: "envoy.filters.network.tcp_compression"  # Upstream might be a bit of a misnomer but this just affects logs.
+        typed_config:
+          "@type": type.googleapis.com/xds.type.v3.TypedStruct
+          type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+          value:
+            # Config values will go in here
+            direction: "incoming"
+  - applyTo: NETWORK_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.tcp_compression"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: "envoy.filters.network.jb_test"
         typed_config:
           "@type": type.googleapis.com/xds.type.v3.TypedStruct
           type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
           value:
             # Config values will go in here
-            prefix: "listener"
+            prefix: "networkfilter-pre"
+  - applyTo: NETWORK_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.tcp_compression"
+    patch:
+      operation: INSERT_AFTER
+      value:
+        name: "envoy.filters.network.jb_test"
+        typed_config:
+          "@type": type.googleapis.com/xds.type.v3.TypedStruct
+          type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
+          value:
+            # Config values will go in here
+            prefix: "networkfilter-post"
   - applyTo: CLUSTER # Outbound
     match:
       context: SIDECAR_OUTBOUND # will match outbound listeners in all sidecars
@@ -46,7 +80,21 @@ spec:
               type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
               value:
                 # Config values will go in here
-                prefix: "cluster"
+                prefix: "cluster-pre"
+          - name: "envoy.filters.network.tcp_compression"
+            typed_config:
+              "@type": type.googleapis.com/xds.type.v3.TypedStruct
+              type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+              value:
+                # Config values will go in here
+                direction: "outgoing"
+          - name: "envoy.filters.network.jb_test"
+            typed_config:
+              "@type": type.googleapis.com/xds.type.v3.TypedStruct
+              type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
+              value:
+                # Config values will go in here
+                prefix: "cluster-post"
   - applyTo: CLUSTER # Outbound
     match:
       context: GATEWAY # will match ingress gateway; probably also egress but I don't know how to filter that out 
@@ -71,4 +119,18 @@ spec:
               type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
               value:
                 # Config values will go in here
-                prefix: "cluster-gateway"
+                prefix: "gateway-pre"
+          - name: "envoy.filters.network.tcp_compression"
+            typed_config:
+              "@type": type.googleapis.com/xds.type.v3.TypedStruct
+              type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+              value:
+                # Config values will go in here
+                direction: "outgoing"
+          - name: "envoy.filters.network.jb_test"
+            typed_config:
+              "@type": type.googleapis.com/xds.type.v3.TypedStruct
+              type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
+              value:
+                # Config values will go in here
+                prefix: "gateway-post"
