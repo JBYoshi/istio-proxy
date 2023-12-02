@@ -22,6 +22,8 @@ namespace Envoy {
 namespace Tcp {
 namespace JBTest {
 
+enum class FilterDirection { Upstream, Downstream };
+
 /**
  * Config registration for the JBTest filter. @see
  *  NamedNetworkFilterConfigFactory.
@@ -41,6 +43,27 @@ private:
   Network::FilterFactoryCb
   createFilterFactory(const envoy::tcp::jb_test::config::JBTest& proto_config,
                       Server::Configuration::FactoryContext& context);
+};
+
+/**
+ * Config registration for the JBTest Upstream filter. @see
+ *  NamedUpstreamNetworkFilterConfigFactory.
+ */
+class JBTestUpstreamConfigFactory
+    : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
+public:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::UpstreamFactoryContext&) override;
+
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override;
+
+  std::string name() const override { return "envoy.filters.network.upstream.jb_test"; }
+
+private:
+  Network::FilterFactoryCb
+  createFilterFactory(const envoy::tcp::jb_test::config::JBTest& proto_config,
+                      Server::Configuration::UpstreamFactoryContext& context);
 };
 
 } // namespace JBTest

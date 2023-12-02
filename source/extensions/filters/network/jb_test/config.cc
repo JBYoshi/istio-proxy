@@ -26,7 +26,8 @@ namespace {
 
 Network::FilterFactoryCb createFilterFactoryHelper(
     const envoy::tcp::jb_test::config::JBTest& proto_config,
-    Server::Configuration::ServerFactoryContext& context) {
+    Server::Configuration::ServerFactoryContext& context, FilterDirection filter_direction) {
+  UNUSED(filter_direction);
   JBTestConfigSharedPtr filter_config(std::make_shared<JBTestConfig>(proto_config.prefix()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
@@ -48,16 +49,42 @@ ProtobufTypes::MessagePtr JBTestConfigFactory::createEmptyConfigProto() {
 Network::FilterFactoryCb JBTestConfigFactory::createFilterFactory(
     const envoy::tcp::jb_test::config::JBTest& proto_config,
     Server::Configuration::FactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext());
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
+                                   FilterDirection::Downstream);
+}
+
+Network::FilterFactoryCb JBTestUpstreamConfigFactory::createFilterFactoryFromProto(
+    const Protobuf::Message& config, Server::Configuration::UpstreamFactoryContext& context) {
+  return createFilterFactory(
+      dynamic_cast<const envoy::tcp::jb_test::config::JBTest&>(config), context);
+}
+
+ProtobufTypes::MessagePtr JBTestUpstreamConfigFactory::createEmptyConfigProto() {
+  return std::make_unique<envoy::tcp::jb_test::config::JBTest>();
+}
+
+Network::FilterFactoryCb JBTestUpstreamConfigFactory::createFilterFactory(
+    const envoy::tcp::jb_test::config::JBTest& proto_config,
+    Server::Configuration::UpstreamFactoryContext& context) {
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
+                                   FilterDirection::Upstream);
 }
 
 /**
- * Static registration for the JBTest filter. @see
+ * Static registration for the JBTest Downstream filter. @see
  * RegisterFactory.
  */
 static Registry::RegisterFactory<JBTestConfigFactory,
                                  Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
+
+/**
+ * Static registration for the JBTest Upstream filter. @see
+ * RegisterFactory.
+ */
+static Registry::RegisterFactory<JBTestUpstreamConfigFactory,
+                                 Server::Configuration::NamedUpstreamNetworkFilterConfigFactory>
+    registered_upstream_;
 
 } // namespace JBTest
 } // namespace Tcp
