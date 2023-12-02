@@ -1,0 +1,95 @@
+# Apply this with kubectl apply -f jbtestfilter.yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: jbtestfilter
+  # NOTE: to update the gateway itself, change this to istio-system.
+  namespace: default # as defined in meshConfig resource.
+spec:
+  configPatches:
+  - applyTo: NETWORK_FILTER # http connection manager is a filter in Envoy
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: "envoy.filters.network.upstream.jb_test"  # Upstream might be a bit of a misnomer but this just affects logs.
+        typed_config:
+          "@type": type.googleapis.com/xds.type.v3.TypedStruct
+          type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
+          value:
+            # Config values will go in here
+  - applyTo: CLUSTER # Outbound
+    match:
+      context: SIDECAR_OUTBOUND # will match outbound listeners in all sidecars
+      # This won't apply to user-bound connections. I thought applying to all contexts (i.e. GATEWAY) would do that but doing so breaks everything.
+    patch:
+      operation: MERGE
+      value:
+        typed_extension_protocol_options:
+          envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+            "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+            upstream_http_protocol_options:
+              auto_sni: true
+            common_http_protocol_options:
+              idle_timeout: 60s
+            explicit_http_config:
+              http2_protocol_options:
+                max_concurrent_streams: 100
+        filters:
+          - name: "envoy.filters.network.jb_test"
+            typed_config:
+              "@type": type.googleapis.com/xds.type.v3.TypedStruct
+              type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
+              value:
+                # Config values will go in here
+  # - applyTo: NETWORK_FILTER
+  #   match:
+  #     context: SIDECAR_OUTBOUND
+  #     listener:
+  #       filterChain:
+  #         filter:
+  #           name: "envoy.filters.network.tcp_proxy"
+  #   patch:
+  #     operation: INSERT_BEFORE
+  #     value:
+  #       name: envoy.filters.network.http_connection_manager
+  #       typed_config:
+  #         "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+  #         stat_prefix: "jbextra"
+  #         httpFilters:
+  #           - name: istio.alpn
+  #             typedConfig:
+  #               '@type': type.googleapis.com/istio.envoy.config.filter.http.alpn.v2alpha1.FilterConfig
+  #               alpnOverride:
+  #               - alpnOverride:
+  #                 - istio-http/1.0
+  #                 - istio
+  #                 - http/1.0
+  #               - alpnOverride:
+  #                 - istio-http/1.1
+  #                 - istio
+  #                 - http/1.1
+  #                 upstreamProtocol: HTTP11
+  #               - alpnOverride:
+  #                 - istio-h2
+  #                 - istio
+  #                 - h2
+  #                 upstreamProtocol: HTTP2
+  #           - name: envoy.filters.http.fault
+  #             typedConfig:
+  #               '@type': type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault
+  #           - name: envoy.filters.http.cors
+  #             typedConfig:
+  #               '@type': type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+  #           - name: istio.stats
+  #             typedConfig:
+  #               '@type': type.googleapis.com/stats.PluginConfig
+  #           - name: envoy.filters.http.router
+  #             typedConfig:
+  #               '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  # TODO: want an HTTP connection manager applying to outbound listener filters.
