@@ -27,8 +27,7 @@ namespace {
 Network::FilterFactoryCb createFilterFactoryHelper(
     const envoy::tcp::compression::config::TcpCompression& proto_config,
     Server::Configuration::ServerFactoryContext& context) {
-  UNUSED(proto_config);
-  TcpCompressionConfigSharedPtr filter_config(std::make_shared<TcpCompressionConfig>(context.scope()));
+  TcpCompressionConfigSharedPtr filter_config(std::make_shared<TcpCompressionConfig>(proto_config.log_prefix(), context.scope()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
         std::make_shared<TcpCompressionFilter>(filter_config, context.localInfo()));

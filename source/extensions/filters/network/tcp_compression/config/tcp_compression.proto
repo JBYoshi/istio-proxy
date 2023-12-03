@@ -25,4 +25,5 @@ option go_package = "TcpCompression";
 // [#protodoc-title: MetadataExchange protocol match and data transfer]
 // TcpCompression protocol match and data transfer
 message TcpCompression {
+    string log_prefix = 1;
 }

@@ -52,9 +52,10 @@ enum class CompressionState {
  */
 class TcpCompressionConfig {
 public:
-  TcpCompressionConfig(Stats::Scope& scope): scope(scope) {}
+  TcpCompressionConfig(std::string log_prefix, Stats::Scope& scope): scope(scope), log_prefix(log_prefix) {}
 
   Stats::Scope& scope;
+  std::string log_prefix;
 
   static const CelStatePrototype& nodeInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(

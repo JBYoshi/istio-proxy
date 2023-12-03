@@ -38,7 +38,7 @@ namespace JBTest {
     bytes[data.length()] = '\0';
 
     for (unsigned long i = 0; i < data.length(); i++) {
-      if (bytes[i] < ' ') bytes[i] = '.';
+      if (bytes[i] < ' ' || bytes[i] >= 127) bytes[i] = '.';
     }
     printf("%s\n", bytes.data());
   }

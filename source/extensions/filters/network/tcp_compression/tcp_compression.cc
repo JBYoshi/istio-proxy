@@ -39,17 +39,6 @@ namespace Compression {
   // The prefix will let me try to avoid double-compressing the data.
   static const std::string COMPRESSION_PREFIX = "COMPRESS!";
 
-  void print_bytes(const Buffer::Instance& data) {
-    std::string bytes(data.length() + 1, '\0');
-    data.copyOut(0, data.length(), bytes.data());
-    bytes[data.length()] = '\0';
-
-    for (unsigned long i = 0; i < data.length(); i++) {
-      if (bytes[i] < ' ') bytes[i] = '.';
-    }
-    printf("%s\n", bytes.data());
-  }
-
 TcpCompressionFilter::TcpCompressionFilter(TcpCompressionConfigSharedPtr config,
                          const LocalInfo::LocalInfo& local_info): config_(config) {
   UNUSED(local_info);
@@ -97,10 +86,10 @@ Network::FilterStatus TcpCompressionFilter::onData(Buffer::Instance& data, bool 
     decompressor->decompress(data, out_buf);
     data.drain(data.length());
     data.add(out_buf);
-    printf("TcpCompressionFilter::onData: decompressed %lu bytes to %lu bytes\n", old_len, data.length());
+    printf("TcpCompressionFilter(%s)::onData: decompressed %lu bytes to %lu bytes\n", config_->log_prefix.c_str(), old_len, data.length());
     fflush(stdout);
   } else {
-    printf("TcpCompressionFilter::onData: passed through %lu uncompressed bytes\n", data.length());
+    printf("TcpCompressionFilter(%s)::onData: passed through %lu uncompressed bytes\n", config_->log_prefix.c_str(), data.length());
     fflush(stdout);
   }
 
@@ -129,10 +118,10 @@ Network::FilterStatus TcpCompressionFilter::onWrite(Buffer::Instance& data, bool
       data.prepend(COMPRESSION_PREFIX);
     }
 
-    printf("TcpCompressionFilter::onWrite: compressed %lu bytes to %lu bytes\n", old_len, data.length());
+    printf("TcpCompressionFilter(%s)::onWrite: compressed %lu bytes to %lu bytes\n", config_->log_prefix.c_str(), old_len, data.length());
     fflush(stdout);
   } else {
-    printf("TcpCompressionFilter::onWrite: passed through %lu already-compressed bytes\n", data.length());
+    printf("TcpCompressionFilter(%s)::onWrite: passed through %lu already-compressed bytes\n", config_->log_prefix.c_str(), data.length());
     fflush(stdout);
   }
   return Network::FilterStatus::Continue;
