@@ -15,34 +15,24 @@ spec:
     patch:
       operation: INSERT_BEFORE
       value:
-        name: "envoy.filters.network.tcp_compression"
+        name: "envoy.filters.network.jb_test"
         typed_config:
           "@type": type.googleapis.com/xds.type.v3.TypedStruct
-          type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+          type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
           value:
             # Config values will go in here
-            log_prefix: "networkfilter"
+            prefix: "networkfilter"
   - applyTo: CLUSTER # Outbound
     match:
       context: SIDECAR_OUTBOUND # will match outbound listeners in all sidecars
     patch:
       operation: MERGE
       value:
-        typed_extension_protocol_options:
-          envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-            "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-            upstream_http_protocol_options:
-              auto_sni: true
-            common_http_protocol_options:
-              idle_timeout: 60s
-            explicit_http_config:
-              http2_protocol_options:
-                max_concurrent_streams: 100
         filters:
-          - name: "envoy.filters.network.tcp_compression"
+          - name: "envoy.filters.network.jb_test"
             typed_config:
               "@type": type.googleapis.com/xds.type.v3.TypedStruct
-              type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+              type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
               value:
                 # Config values will go in here
                 prefix: "cluster"
@@ -53,20 +43,11 @@ spec:
       operation: MERGE
       value:
         typed_extension_protocol_options:
-          envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-            "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-            upstream_http_protocol_options:
-              auto_sni: true
-            common_http_protocol_options:
-              idle_timeout: 60s
-            explicit_http_config:
-              http2_protocol_options:
-                max_concurrent_streams: 100
         filters:
-          - name: "envoy.filters.network.tcp_compression"
+          - name: "envoy.filters.network.jb_test"
             typed_config:
               "@type": type.googleapis.com/xds.type.v3.TypedStruct
-              type_url: "type.googleapis.com/envoy.tcp.compression.config.TcpCompression"
+              type_url: "type.googleapis.com/envoy.tcp.jb_test.config.JBTest"
               value:
                 # Config values will go in here
-                log_prefix: "gateway"
+                prefix: "gateway"
